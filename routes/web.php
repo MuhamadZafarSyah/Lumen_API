@@ -2,6 +2,8 @@
 
 /** @var \Laravel\Lumen\Routing\Router $router */
 
+use App\Http\Controllers\PostsController;
+
 /*
 |--------------------------------------------------------------------------
 | Application Routes
@@ -21,14 +23,21 @@ $router->get('/hello', function () {
     return 'hello';
 });
 
-$router->group(['prefix' => 'api'], function () use ($router) {
-    $router->post('/signup', 'AuthController@signup');
 
+
+$router->group(['prefix' => 'api'], function () use ($router) {
+    $router->post('/register', 'AuthController@register');
+
+    $router->post('/login', 'AuthController@login');
+});
+
+
+$router->group(['prefix' => 'api', 'middleware' => 'auth'], function () use ($router) {
 
     $router->get('/posts', 'PostsController@index');
     $router->get('/posts/{id}', 'PostsController@show');
 
-    $router->put('/posts/{id}', 'PostsController@update');
+    $router->get('/posts/{id}', 'PostsController@update');
 
     $router->post('/posts', 'PostsController@store');
     $router->delete('/posts/{id}', 'PostsController@destroy');

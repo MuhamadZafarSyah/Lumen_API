@@ -10,12 +10,16 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    public function signup(Request $request)
+    public function __construct()
     {
-        $validator =  Validator($request->all(), [
+        $this->middleware("auth:api", ['except' => ['login', 'register']]);
+    }
+    public function register(Request $request)
+    {
+        $validator = Validator($request->all(), [
             'name' => 'required|string|min:3|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
+            'password' => 'required|string|min:4|confirmed',
         ]);
 
         if ($validator->fails()) {
@@ -41,26 +45,19 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $request->validate([
+        $this->validate($request, [
             'email' => 'required|string|email',
             'password' => 'required|string',
         ]);
 
         $credentials = $request->only('email', 'password');
 
-        if (Auth::attempt($credentials)) {
-            $user = Auth::user();
-            $token = $user->createToken('MyApp')->accessToken;
-
+        if (!$token = Auth::attempt($credentials)) {
             return response()->json([
-                'token' => $token,
-                'user' => $user
-            ]);
+                'message' => 'Unauthorized',
+            ], 401);
         }
-
-        throw ValidationException::withMessages([
-            'email' => ['The provided credentials are incorrect.'],
-        ]);
+        return $this->respondWithToken($token);
     }
 
     public function logout(Request $request)
@@ -69,5 +66,10 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'Successfully logged out'
         ]);
+    }
+
+    public function me()
+    {
+        return response()->json(auth()->user());
     }
 }
